@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Account } from "@/types";
+import { Account, Transaction } from "@/types";
 import AccountModal from "@/components/AccountModal";
+import TransactionsModal from "@/components/TransactionsModal";
 
 export default function Home() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   const fetchAccounts = async () => {
     const res = await fetch("http://localhost:8000/accounts");
@@ -57,6 +62,37 @@ export default function Home() {
       setSelectedAccount(null);
     }
     setModalOpen(false);
+  };
+
+  const handleCreateTransaction = async (
+    title: string,
+    amount: number,
+    category: string
+  ) => {
+    if (!selectedAccount) return;
+    await fetch(`http://localhost:8000/accounts/${selectedAccount.id}/transactions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, amount, category }),
+    });
+    await handleSelect(selectedAccount.id);
+    setTransactionModalOpen(false);
+  };
+
+  const handleEditTransaction = async (
+    id: string,
+    title: string,
+    amount: number,
+    category: string
+  ) => {
+    await fetch(`http://localhost:8000/transactions/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, amount, category }),
+    });
+    if (selectedAccount) await handleSelect(selectedAccount.id);
+    setEditingTransaction(null);
+    setTransactionModalOpen(false);
   };
 
   return (
@@ -124,9 +160,20 @@ export default function Home() {
       <div className="w-2/3 border rounded p-4">
         {selectedAccount ? (
           <>
-            <h2 className="text-xl font-bold mb-4">
-              Transacciones de {selectedAccount.title}
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">
+                Transacciones de {selectedAccount.title}
+              </h2>
+              <button
+                className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                onClick={() => {
+                  setEditingTransaction(null);
+                  setTransactionModalOpen(true);
+                }}
+              >
+                Nueva transacción
+              </button>
+            </div>
             {selectedAccount.transactions.length === 0 ? (
               <p className="text-gray-500">No hay transacciones.</p>
             ) : (
@@ -136,6 +183,32 @@ export default function Home() {
                     <div className="font-medium">{t.title}</div>
                     <div className="text-sm text-gray-600">
                       ${t.amount} – {t.category}
+                    </div>
+                    <div className="flex space-x-2 mt-2">
+                      <button
+                        className="text-blue-600 text-sm"
+                        onClick={() => {
+                          setEditingTransaction(t);
+                          setTransactionModalOpen(true);
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="text-red-600 text-sm"
+                        onClick={async () => {
+                          if (
+                            confirm("¿Estás seguro de que quieres eliminar esta transacción?")
+                          ) {
+                            await fetch(`http://localhost:8000/transactions/${t.id}`, {
+                              method: "DELETE",
+                            });
+                            if (selectedAccount) await handleSelect(selectedAccount.id);
+                          }
+                        }}
+                      >
+                        Eliminar
+                      </button>
                     </div>
                   </li>
                 ))}
@@ -149,6 +222,7 @@ export default function Home() {
         )}
       </div>
 
+      {/* Modal de cuentas */}
       {modalOpen && (
         <AccountModal
           account={editingAccount}
@@ -158,6 +232,19 @@ export default function Home() {
           }}
           onCreate={handleCreate}
           onEdit={handleEdit}
+        />
+      )}
+
+      {/* Modal de transacciones */}
+      {transactionModalOpen && (
+        <TransactionsModal
+          transaction={editingTransaction}
+          onClose={() => {
+            setTransactionModalOpen(false);
+            setEditingTransaction(null);
+          }}
+          onCreate={handleCreateTransaction}
+          onEdit={handleEditTransaction}
         />
       )}
     </main>
