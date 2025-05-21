@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Account, Transaction } from "@/types";
 import AccountModal from "@/components/AccountModal";
 import TransactionsModal from "@/components/TransactionsModal";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -23,9 +24,18 @@ export default function Home() {
     if (data.length > 0) setSelectedAccount(data[0]);
   };
 
+  const router = useRouter();
+
   useEffect(() => {
     fetchAccounts();
   }, []);
+
+    useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated')
+    if (!isAuthenticated) {
+      router.push('/login')
+    }
+  }, [router])
 
   const handleSelect = async (accountId: string) => {
     const res = await fetch(`http://localhost:8000/accounts/${accountId}`);
@@ -106,6 +116,19 @@ export default function Home() {
   return (
     <main className="flex p-6 space-x-6">
       {/* Panel izquierdo: cuentas */}
+      <h1>Dashboard Principal</h1>
+      <button
+  onClick={() => {
+    localStorage.removeItem('isAuthenticated')
+    router.push('/login')
+  }}
+  className="bg-red-500 text-white px-4 py-2 rounded"
+>
+  Cerrar sesión
+</button>
+      <div>
+        
+      </div>
       <div className="w-1/3 border rounded p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Cuentas</h2>
