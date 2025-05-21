@@ -213,7 +213,7 @@ export default function Home() {
                             )
                           ) {
                             await fetch(
-                              `http://localhost:8000/accounts/transactions/${t.id}`,
+                              `http://localhost:8000/transactions/${t.id}`,
                               {
                                 method: "DELETE",
                               }

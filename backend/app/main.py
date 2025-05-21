@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.routers import account
+from app.routers import transaction
 from app import models, database
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,3 +18,4 @@ app.add_middleware(
 )
 
 app.include_router(account.router)
+app.include_router(transaction.router)
