@@ -13,7 +13,8 @@ export default function Home() {
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null);
 
   const fetchAccounts = async () => {
     const res = await fetch("http://localhost:8000/accounts");
@@ -70,12 +71,16 @@ export default function Home() {
     category: string
   ) => {
     if (!selectedAccount) return;
-    await fetch(`http://localhost:8000/accounts/${selectedAccount.id}/transactions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, amount, category }),
-    });
-    await handleSelect(selectedAccount.id);
+    await fetch(
+      `http://localhost:8000/accounts/${selectedAccount.id}/transactions`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, amount, category }),
+      }
+    );
+    await handleSelect(selectedAccount.id); // Actualiza el panel derecho
+    await fetchAccounts(); // Actualiza el panel izquierdo
     setTransactionModalOpen(false);
   };
 
@@ -90,7 +95,10 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, amount, category }),
     });
-    if (selectedAccount) await handleSelect(selectedAccount.id);
+    if (selectedAccount) {
+      await handleSelect(selectedAccount.id); // Actualiza la cuenta activa
+      await fetchAccounts(); // Refresca la lista
+    }
     setEditingTransaction(null);
     setTransactionModalOpen(false);
   };
@@ -142,7 +150,9 @@ export default function Home() {
                   onClick={(e) => {
                     e.stopPropagation();
                     if (
-                      confirm("¿Estás seguro de que quieres eliminar esta cuenta?")
+                      confirm(
+                        "¿Estás seguro de que quieres eliminar esta cuenta?"
+                      )
                     ) {
                       handleDelete(account.id);
                     }
@@ -198,12 +208,20 @@ export default function Home() {
                         className="text-red-600 text-sm"
                         onClick={async () => {
                           if (
-                            confirm("¿Estás seguro de que quieres eliminar esta transacción?")
+                            confirm(
+                              "¿Estás seguro de que quieres eliminar esta transacción?"
+                            )
                           ) {
-                            await fetch(`http://localhost:8000/transactions/${t.id}`, {
-                              method: "DELETE",
-                            });
-                            if (selectedAccount) await handleSelect(selectedAccount.id);
+                            await fetch(
+                              `http://localhost:8000/accounts/transactions/${t.id}`,
+                              {
+                                method: "DELETE",
+                              }
+                            );
+                            if (selectedAccount) {
+                              await handleSelect(selectedAccount.id);
+                              await fetchAccounts();
+                            }
                           }
                         }}
                       >
